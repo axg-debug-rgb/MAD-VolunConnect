@@ -2,68 +2,86 @@ package com.example.voluntra_mad_project
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.fragment.app.Fragment
+import androidx.activity.OnBackPressedCallback // <-- REQUIRED
 import com.example.voluntra_mad_project.databinding.ActivityMainBinding
-import com.example.voluntra_mad_project.models.Event
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import org.osmdroid.config.Configuration
-import org.osmdroid.util.GeoPoint
+import com.google.android.material.floatingactionbutton.FloatingActionButton // <-- REQUIRED
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var eventsAdapter: EventsAdapter
+    private var isMapVisible = false // State variable to track the current view
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        Configuration.getInstance().load(applicationContext, getPreferences(MODE_PRIVATE))
-        Configuration.getInstance().userAgentValue = applicationContext.packageName
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupMap()
-        setupRecyclerView()
-        loadEventsFromFirestore()
-    }
-
-    private fun setupMap() {
-        val mapController = binding.mapView.controller
-        mapController.setZoom(12.5)
-        val startPoint = GeoPoint(19.0760, 72.8777) // Mumbai
-        mapController.setCenter(startPoint)
-    }
-
-    private fun setupRecyclerView() {
-        // The RecyclerView is inside the included layout, so we access it via binding.bottomSheet
-        binding.bottomSheet.recyclerViewEvents.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            eventsAdapter = EventsAdapter(emptyList())
-            adapter = eventsAdapter
+        // 1. Initial Fragment Setup: Show the List by default
+        if (savedInstanceState == null) {
+            showFragment(EventListFragment(), addToBackStack = false)
         }
+
+        // 2. Set up the Toggle FAB listener (R.id.fab_map_list_toggle)
+        val fabToggle = findViewById<FloatingActionButton>(R.id.fab_map_list_toggle)
+        fabToggle.setOnClickListener {
+            if (isMapVisible) {
+                // Currently showing Map, switch to List
+                showFragment(EventListFragment(), addToBackStack = false)
+            } else {
+                // Currently showing List, switch to Map
+                showFragment(MapOverlayFragment(), addToBackStack = true)
+            }
+            isMapVisible = !isMapVisible
+            updateFabIcon(fabToggle)
+        }
+
+        // 3. CORRECT BACK PRESS LOGIC (Modern API)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (supportFragmentManager.backStackEntryCount > 0) {
+                    // Pop the Map Fragment back to the List Fragment
+                    supportFragmentManager.popBackStack()
+
+                    // Update state and FAB icon
+                    isMapVisible = false
+                    updateFabIcon(fabToggle)
+                } else {
+                    // Otherwise, let the system handle the back press (exit app)
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
-    private fun loadEventsFromFirestore() {
-        val db = Firebase.firestore
-        db.collection("events")
-            .get()
-            .addOnSuccessListener { result ->
-                val eventsList = result.toObjects(Event::class.java)
-                eventsAdapter.submitList(eventsList)
-                Log.d("MainActivity", "Successfully fetched ${eventsList.size} events.")
-            }
-            .addOnFailureListener { exception ->
-                Log.w("MainActivity", "Error getting documents.", exception)
-                Toast.makeText(this, "Failed to load events.", Toast.LENGTH_SHORT).show()
-            }
+    // Helper function to handle fragment transactions
+    private fun showFragment(fragment: Fragment, addToBackStack: Boolean) {
+        val transaction = supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+
+        if (addToBackStack) {
+            // Add to back stack when navigating from List to Map
+            transaction.addToBackStack("map_view")
+        } else {
+            // Remove all map entries from the stack when returning to the list
+            supportFragmentManager.popBackStack("map_view", androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        }
+
+        transaction.commit()
     }
+
+    // Helper function to change the FAB icon
+    private fun updateFabIcon(fab: FloatingActionButton) {
+        // You MUST have R.drawable.ic_map and R.drawable.ic_list created!
+        val iconResId = if (isMapVisible) R.drawable.ic_list else R.drawable.ic_map
+        fab.setImageResource(iconResId)
+        fab.contentDescription = if (isMapVisible) "Show Event List" else "Show Map"
+    }
+
 
     // --- Menu Handling ---
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -81,14 +99,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- Map Lifecycle ---
-    override fun onResume() {
-        super.onResume()
-        binding.mapView.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        binding.mapView.onPause()
-    }
+    // The old 'override fun onBackPressed()' is REMOVED, replaced by the logic in onCreate.
 }

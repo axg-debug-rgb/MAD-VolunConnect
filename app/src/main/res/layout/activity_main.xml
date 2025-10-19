@@ -6,10 +6,11 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <org.osmdroid.views.MapView
-        android:id="@+id/map_view"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <View
         android:layout_width="match_parent"
@@ -65,14 +66,17 @@
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_my_location"
+        android:id="@+id/fab_map_list_toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
-        app:srcCompat="@drawable/ic_my_location"
-        app:layout_anchor="@id/bottom_sheet"
-        app:layout_anchorGravity="top|end"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="90dp"  android:contentDescription="Toggle Map View"
+        app:srcCompat="@drawable/ic_map"
+        app:tint="?attr/colorOnPrimary"
+        app:backgroundTint="?attr/colorPrimaryContainer"
+        app:fabSize="normal"
+        tools:ignore="RtlHardcoded" />
 
     <include
         android:id="@+id/bottom_sheet"

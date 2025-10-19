@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- REQUIRED PERMISSIONS FOR OSMDROID AND INTERNET ACCESS -->
+
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- WRITE_EXTERNAL_STORAGE is necessary for OSMDroid tile caching on older APIs -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <application
         android:name=".VolunConnectApplication"
@@ -21,6 +26,10 @@
 
         <activity
             android:name=".LoginActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,19 +38,18 @@
         </activity>
 
         <activity
-            android:name=".MainActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:label="Settings"
             android:parentActivityName=".MainActivity"/>
 
+        <!-- The following EventDetailActivity declaration was removed because the corresponding Kotlin file was missing.
         <activity
             android:name=".EventDetailActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity"/>
+        -->
+
 
     </application>
 
